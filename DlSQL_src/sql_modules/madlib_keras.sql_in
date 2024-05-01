@@ -1,0 +1,1233 @@
+/* ----------------------------------------------------------------------- *//**
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ *
+ *
+ * @file madlib_keras.sql_in
+ *
+ * @brief Fit, evaluate and predict for one model.
+ * @date June 2019
+ *
+ *
+ *//* ----------------------------------------------------------------------- */
+
+m4_include(`SQLCommon.m4')
+
+
+
+CREATE OR REPLACE FUNCTION MADLIB_SCHEMA.madlib_keras_fit(
+    source_table            VARCHAR,
+    model                   VARCHAR,
+    model_arch_table        VARCHAR,
+    model_id                INTEGER,
+    compile_params          VARCHAR,
+    fit_params              VARCHAR,
+    num_iterations          INTEGER,
+    use_gpus                BOOLEAN DEFAULT FALSE,
+    validation_table        VARCHAR DEFAULT NULL,
+    metrics_compute_frequency  INTEGER DEFAULT NULL,
+    warm_start              BOOLEAN DEFAULT NULL,
+    name                    VARCHAR DEFAULT NULL,
+    description             VARCHAR DEFAULT NULL,
+    object_table            VARCHAR DEFAULT NULL
+) RETURNS VOID AS $$
+    PythonFunctionBodyOnly(`deep_learning', `madlib_keras')
+    from utilities.control import SetGUC
+    with AOControl(False):
+        with SetGUC("plan_cache_mode", "force_generic_plan"):
+            madlib_keras.fit(**globals())
+$$ LANGUAGE plpythonu VOLATILE
+m4_ifdef(`__HAS_FUNCTION_PROPERTIES__', `MODIFIES SQL DATA', `');
+
+CREATE OR REPLACE FUNCTION MADLIB_SCHEMA.fit_transition(
+    state                       BYTEA,
+    dependent_var               BYTEA[],
+    independent_var             BYTEA[],
+    dependent_var_shape         INTEGER[],
+    independent_var_shape       INTEGER[],
+    model_architecture          TEXT,
+    compile_params              TEXT,
+    fit_params                  TEXT,
+    dist_key                    INTEGER,
+    dist_key_mapping            INTEGER[],
+    current_seg_id              INTEGER,
+    segments_per_host           INTEGER[],
+    images_per_seg              INTEGER[],
+    accessible_gpus_for_seg     INTEGER[],
+    prev_serialized_weights     BYTEA,
+    custom_function_map         BYTEA
+) RETURNS BYTEA AS $$
+PythonFunctionBodyOnlyNoSchema(`deep_learning', `madlib_keras')
+    import traceback
+    from sys import exc_info
+    import plpy
+    try:
+        return madlib_keras.fit_transition(**globals())
+    except Exception as e:
+        etype, _, tb = exc_info()
+        detail = ''.join(traceback.format_exception(etype, e, tb))
+        message = e.message + 'TransAggDetail' + detail
+        e.args = (message,)
+        raise e
+$$ LANGUAGE plpythonu
+m4_ifdef(`__HAS_FUNCTION_PROPERTIES__', `NO SQL', `');
+
+
+CREATE OR REPLACE FUNCTION MADLIB_SCHEMA.fit_transition_wide(
+    state                       BYTEA,
+    dependent_var1              BYTEA,
+    dependent_var2              BYTEA,
+    dependent_var3              BYTEA,
+    dependent_var4              BYTEA,
+    dependent_var5              BYTEA,
+    independent_var1            BYTEA,
+    independent_var2            BYTEA,
+    independent_var3            BYTEA,
+    independent_var4            BYTEA,
+    independent_var5            BYTEA,
+    dependent_var_shape         INTEGER[],
+    independent_var_shape       INTEGER[],
+    model_architecture          TEXT,
+    compile_params              TEXT,
+    fit_params                  TEXT,
+    dist_key                    INTEGER,
+    dist_key_mapping            INTEGER[],
+    current_seg_id              INTEGER,
+    segments_per_host           INTEGER[],
+    images_per_seg              INTEGER[],
+    accessible_gpus_for_seg     INTEGER[],
+    prev_serialized_weights     BYTEA,
+    custom_function_map         BYTEA
+) RETURNS BYTEA AS $$
+PythonFunctionBodyOnlyNoSchema(`deep_learning', `madlib_keras')
+    import traceback
+    from sys import exc_info
+    import plpy
+    try:
+        return madlib_keras.fit_transition_wide(**globals())
+    except Exception as e:
+        etype, _, tb = exc_info()
+        detail = ''.join(traceback.format_exception(etype, e, tb))
+        message = e.message + 'TransAggDetail' + detail
+        e.args = (message,)
+        raise e
+$$ LANGUAGE plpythonu
+m4_ifdef(`__HAS_FUNCTION_PROPERTIES__', `NO SQL', `');
+
+CREATE OR REPLACE FUNCTION MADLIB_SCHEMA.fit_merge(
+    state1          BYTEA,
+    state2          BYTEA
+) RETURNS BYTEA AS $$
+PythonFunctionBodyOnlyNoSchema(`deep_learning', `madlib_keras')
+    import traceback
+    from sys import exc_info
+    import plpy
+
+    try:
+        return madlib_keras.fit_merge(**globals())
+    except Exception as e:
+        etype, _, tb = exc_info()
+        detail = ''.join(traceback.format_exception(etype, e, tb))
+        message = e.message + 'MergeAggDetail' + detail
+        e.args = (message,)
+        raise e
+$$ LANGUAGE plpythonu
+m4_ifdef(`__HAS_FUNCTION_PROPERTIES__', `NO SQL', `');
+
+CREATE OR REPLACE FUNCTION MADLIB_SCHEMA.fit_final(
+    state BYTEA
+) RETURNS BYTEA AS $$
+PythonFunctionBodyOnlyNoSchema(`deep_learning', `madlib_keras')
+    import traceback
+    from sys import exc_info
+    import plpy
+    try:
+        return madlib_keras.fit_final(**globals())
+    except Exception as e:
+        etype, _, tb = exc_info()
+        detail = ''.join(traceback.format_exception(etype, e, tb))
+        message = e.message + 'FinalAggDetail' + detail
+        e.args = (message,)
+        raise e
+
+$$ LANGUAGE plpythonu
+m4_ifdef(`__HAS_FUNCTION_PROPERTIES__', `NO SQL', `');
+
+DROP AGGREGATE IF EXISTS MADLIB_SCHEMA.fit_step(
+    /* dep_var */                BYTEA,
+    /* dep_var */                BYTEA,
+    /* dep_var */                BYTEA,
+    /* dep_var */                BYTEA,
+    /* dep_var */                BYTEA,
+    /* ind_var */                BYTEA,
+    /* ind_var */                BYTEA,
+    /* ind_var */                BYTEA,
+    /* ind_var */                BYTEA,
+    /* ind_var */                BYTEA,
+    /* dep_var_shape */          INTEGER[],
+    /* ind_var_shape */          INTEGER[],
+    /* model_architecture */     TEXT,
+    /* compile_params */         TEXT,
+    /* fit_params */             TEXT,
+    /* dist_key */               INTEGER,
+    /* dist_key_mapping */       INTEGER[],
+    /* current_seg_id */         INTEGER,
+    /* segments_per_host */      INTEGER[],
+    /* images_per_seg */         INTEGER[],
+    /* segments_per_host  */     INTEGER[],
+    /* prev_serialized_weights */BYTEA,
+    /* custom_loss_cfunction */  BYTEA);
+CREATE AGGREGATE MADLIB_SCHEMA.fit_step(
+    /* dep_var */                BYTEA,
+    /* dep_var */                BYTEA,
+    /* dep_var */                BYTEA,
+    /* dep_var */                BYTEA,
+    /* dep_var */                BYTEA,
+    /* ind_var */                BYTEA,
+    /* ind_var */                BYTEA,
+    /* ind_var */                BYTEA,
+    /* ind_var */                BYTEA,
+    /* ind_var */                BYTEA,
+    /* dep_var_shape */          INTEGER[],
+    /* ind_var_shape */          INTEGER[],
+    /* model_architecture */     TEXT,
+    /* compile_params */         TEXT,
+    /* fit_params */             TEXT,
+    /* dist_key */               INTEGER,
+    /* dist_key_mapping */       INTEGER[],
+    /* current_seg_id */         INTEGER,
+    /* segments_per_host */      INTEGER[],
+    /* images_per_seg */         INTEGER[],
+    /* segments_per_host  */     INTEGER[],
+    /* prev_serialized_weights */BYTEA,
+    /* custom_loss_cfunction */  BYTEA
+    )(
+    STYPE=BYTEA,
+    SFUNC=MADLIB_SCHEMA.fit_transition_wide,
+    m4_ifdef(`__POSTGRESQL__', `', `prefunc=MADLIB_SCHEMA.fit_merge,')
+    FINALFUNC=MADLIB_SCHEMA.fit_final
+);
+DROP AGGREGATE IF EXISTS MADLIB_SCHEMA.fit_step(
+    BYTEA[],
+    BYTEA[],
+    INTEGER[],
+    INTEGER[],
+    TEXT,
+    TEXT,
+    TEXT,
+    INTEGER,
+    INTEGER[],
+    INTEGER,
+    INTEGER[],
+    INTEGER[],
+    INTEGER[],
+    BYTEA,
+    BYTEA);
+CREATE AGGREGATE MADLIB_SCHEMA.fit_step(
+    /* dep_var */                BYTEA[],
+    /* ind_var */                BYTEA[],
+    /* dep_var_shape */          INTEGER[],
+    /* ind_var_shape */          INTEGER[],
+    /* model_architecture */     TEXT,
+    /* compile_params */         TEXT,
+    /* fit_params */             TEXT,
+    /* dist_key */               INTEGER,
+    /* dist_key_mapping */       INTEGER[],
+    /* current_seg_id */         INTEGER,
+    /* segments_per_host */      INTEGER[],
+    /* images_per_seg */         INTEGER[],
+    /* accessible_gpus_for_seg */INTEGER[],
+    /* prev_serialized_weights */BYTEA,
+    /* custom_loss_cfunction */  BYTEA
+)(
+    STYPE=BYTEA,
+    SFUNC=MADLIB_SCHEMA.fit_transition,
+    m4_ifdef(`__POSTGRESQL__', `', `prefunc=MADLIB_SCHEMA.fit_merge,')
+    FINALFUNC=MADLIB_SCHEMA.fit_final
+);
+
+CREATE OR REPLACE FUNCTION MADLIB_SCHEMA.madlib_keras_predict(
+    model_table             VARCHAR,
+    test_table              VARCHAR,
+    id_col                  VARCHAR,
+    independent_varname     VARCHAR,
+    output_table            VARCHAR,
+    pred_type               VARCHAR DEFAULT 'prob',
+    use_gpus                BOOLEAN DEFAULT FALSE,
+    mst_key                 INTEGER DEFAULT NULL
+) RETURNS VOID AS $$
+    PythonFunctionBodyOnly(`deep_learning', `madlib_keras_predict')
+    from utilities.control import SetGUC
+    with AOControl(False):
+        with SetGUC("plan_cache_mode", "force_generic_plan"):
+            madlib_keras_predict.Predict(schema_madlib,
+                   model_table,
+                   test_table,
+                   id_col,
+                   independent_varname,
+                   output_table,
+                   pred_type,
+                   use_gpus,
+                   mst_key)
+$$ LANGUAGE plpythonu VOLATILE
+m4_ifdef(`__HAS_FUNCTION_PROPERTIES__', `MODIFIES SQL DATA', `');
+
+CREATE OR REPLACE FUNCTION MADLIB_SCHEMA.madlib_keras_predict(
+    model_table             VARCHAR,
+    test_table              VARCHAR,
+    id_col                  VARCHAR,
+    independent_varname     VARCHAR,
+    output_table            VARCHAR,
+    pred_type               INTEGER,
+    use_gpus                BOOLEAN DEFAULT FALSE,
+    mst_key                 INTEGER DEFAULT NULL
+) RETURNS VOID AS $$
+    PythonFunctionBodyOnly(`deep_learning', `madlib_keras_predict')
+    from utilities.control import SetGUC
+    with AOControl(False):
+        with SetGUC("plan_cache_mode", "force_generic_plan"):
+            madlib_keras_predict.Predict(schema_madlib,
+                   model_table,
+                   test_table,
+                   id_col,
+                   independent_varname,
+                   output_table,
+                   pred_type,
+                   use_gpus,
+                   mst_key)
+$$ LANGUAGE plpythonu VOLATILE
+m4_ifdef(`__HAS_FUNCTION_PROPERTIES__', `MODIFIES SQL DATA', `');
+
+CREATE OR REPLACE FUNCTION MADLIB_SCHEMA.madlib_keras_predict(
+    model_table             VARCHAR,
+    test_table              VARCHAR,
+    id_col                  VARCHAR,
+    independent_varname     VARCHAR,
+    output_table            VARCHAR,
+    pred_type               DOUBLE PRECISION,
+    use_gpus                BOOLEAN DEFAULT FALSE,
+    mst_key                 INTEGER DEFAULT NULL
+) RETURNS VOID AS $$
+    PythonFunctionBodyOnly(`deep_learning', `madlib_keras_predict')
+    from utilities.control import SetGUC
+    with AOControl(False):
+        with SetGUC("plan_cache_mode", "force_generic_plan"):
+            madlib_keras_predict.Predict(schema_madlib,
+                   model_table,
+                   test_table,
+                   id_col,
+                   independent_varname,
+                   output_table,
+                   pred_type,
+                   use_gpus,
+                   mst_key)
+$$ LANGUAGE plpythonu VOLATILE
+m4_ifdef(`__HAS_FUNCTION_PROPERTIES__', `MODIFIES SQL DATA', `');
+
+CREATE OR REPLACE FUNCTION MADLIB_SCHEMA.internal_keras_predict(
+    independent_var    REAL[],
+    independent_var2    REAL[],
+    independent_var3    REAL[],
+    independent_var4    REAL[],
+    independent_var5    REAL[],
+    model_architecture TEXT,
+    model_weights      BYTEA,
+    normalizing_const  DOUBLE PRECISION,
+    current_seg_id     INTEGER,
+    seg_ids            INTEGER[],
+    images_per_seg     INTEGER[],
+    gpus_per_host      INTEGER,
+    segments_per_host  INTEGER[]
+) RETURNS DOUBLE PRECISION[] AS $$
+    PythonFunctionBodyOnlyNoSchema(`deep_learning', `madlib_keras_predict')
+    return madlib_keras_predict.internal_keras_predict_wide(**globals())
+$$ LANGUAGE plpythonu VOLATILE
+m4_ifdef(`__HAS_FUNCTION_PROPERTIES__', `MODIFIES SQL DATA', `');
+
+-------------------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION MADLIB_SCHEMA.madlib_keras_predict_byom(
+    model_arch_table        VARCHAR,
+    model_id                INTEGER,
+    test_table              VARCHAR,
+    id_col                  VARCHAR,
+    independent_varname     VARCHAR,
+    output_table            VARCHAR,
+    pred_type               VARCHAR DEFAULT 'prob',
+    use_gpus                BOOLEAN DEFAULT NULL,
+    class_values            TEXT[] DEFAULT NULL,
+    normalizing_const       DOUBLE PRECISION DEFAULT NULL,
+    dependent_count         INTEGER DEFAULT 1
+) RETURNS VOID AS $$
+    PythonFunctionBodyOnly(`deep_learning', `madlib_keras_predict')
+    from utilities.control import SetGUC
+    with AOControl(False):
+        with SetGUC("plan_cache_mode", "force_generic_plan"):
+            madlib_keras_predict.PredictBYOM(**globals())
+$$ LANGUAGE plpythonu VOLATILE
+m4_ifdef(`__HAS_FUNCTION_PROPERTIES__', `MODIFIES SQL DATA', `');
+
+CREATE OR REPLACE FUNCTION MADLIB_SCHEMA.madlib_keras_predict_byom(
+    model_arch_table        VARCHAR,
+    model_id                INTEGER,
+    test_table              VARCHAR,
+    id_col                  VARCHAR,
+    independent_varname     VARCHAR,
+    output_table            VARCHAR,
+    pred_type               INTEGER,
+    use_gpus                BOOLEAN DEFAULT NULL,
+    class_values            TEXT[] DEFAULT NULL,
+    normalizing_const       DOUBLE PRECISION DEFAULT NULL
+) RETURNS VOID AS $$
+    PythonFunctionBodyOnly(`deep_learning', `madlib_keras_predict')
+    from utilities.control import SetGUC
+    with AOControl(False):
+        with SetGUC("plan_cache_mode", "force_generic_plan"):
+            madlib_keras_predict.PredictBYOM(**globals())
+$$ LANGUAGE plpythonu VOLATILE
+m4_ifdef(`__HAS_FUNCTION_PROPERTIES__', `MODIFIES SQL DATA', `');
+
+CREATE OR REPLACE FUNCTION MADLIB_SCHEMA.madlib_keras_predict_byom(
+    model_arch_table        VARCHAR,
+    model_id                INTEGER,
+    test_table              VARCHAR,
+    id_col                  VARCHAR,
+    independent_varname     VARCHAR,
+    output_table            VARCHAR,
+    pred_type               DOUBLE PRECISION,
+    use_gpus                BOOLEAN DEFAULT NULL,
+    class_values            TEXT[] DEFAULT NULL,
+    normalizing_const       DOUBLE PRECISION DEFAULT NULL
+) RETURNS VOID AS $$
+    PythonFunctionBodyOnly(`deep_learning', `madlib_keras_predict')
+    from utilities.control import SetGUC
+    with AOControl(False):
+        with SetGUC("plan_cache_mode", "force_generic_plan"):
+            madlib_keras_predict.PredictBYOM(**globals())
+$$ LANGUAGE plpythonu VOLATILE
+m4_ifdef(`__HAS_FUNCTION_PROPERTIES__', `MODIFIES SQL DATA', `');
+-------------------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION MADLIB_SCHEMA.madlib_keras_evaluate(
+    model_table             VARCHAR,
+    test_table              VARCHAR,
+    output_table            VARCHAR,
+    use_gpus                BOOLEAN,
+    mst_key                 INTEGER
+) RETURNS VOID AS $$
+    PythonFunctionBodyOnly(`deep_learning', `madlib_keras')
+    from utilities.control import SetGUC
+    with AOControl(False):
+        with SetGUC("plan_cache_mode", "force_generic_plan"):
+            madlib_keras.evaluate(**globals())
+$$ LANGUAGE plpythonu VOLATILE
+m4_ifdef(`__HAS_FUNCTION_PROPERTIES__', `MODIFIES SQL DATA', `');
+
+CREATE OR REPLACE FUNCTION MADLIB_SCHEMA.madlib_keras_evaluate(
+    model_table             VARCHAR,
+    test_table              VARCHAR,
+    output_table            VARCHAR,
+    use_gpus                BOOLEAN
+) RETURNS VOID AS $$
+  SELECT MADLIB_SCHEMA.madlib_keras_evaluate($1, $2, $3, $4, NULL);
+$$ LANGUAGE sql VOLATILE
+m4_ifdef(`__HAS_FUNCTION_PROPERTIES__', `MODIFIES SQL DATA');
+
+CREATE OR REPLACE FUNCTION MADLIB_SCHEMA.madlib_keras_evaluate(
+    model_table             VARCHAR,
+    test_table              VARCHAR,
+    output_table            VARCHAR
+) RETURNS VOID AS $$
+  SELECT MADLIB_SCHEMA.madlib_keras_evaluate($1, $2, $3, NULL, NULL);
+$$ LANGUAGE sql VOLATILE
+m4_ifdef(`__HAS_FUNCTION_PROPERTIES__', `MODIFIES SQL DATA');
+
+CREATE OR REPLACE FUNCTION MADLIB_SCHEMA.internal_keras_eval_transition(
+    state                              REAL[],
+    dependent_var                      BYTEA[],
+    independent_var                    BYTEA[],
+    dependent_var_shape                INTEGER[],
+    independent_var_shape              INTEGER[],
+    serialized_weights                 BYTEA,
+    compile_params                     TEXT,
+    fit_params                     TEXT,
+    dist_key                           INTEGER,
+    dist_key_mapping                   INTEGER[],
+    current_seg_id                     INTEGER,
+    segments_per_host                  INTEGER[],
+    images_per_seg                     INTEGER[],
+    accessible_gpus_for_seg            INTEGER[],
+    should_clear_session               BOOLEAN,
+    custom_function_map                BYTEA
+) RETURNS REAL[] AS $$
+PythonFunctionBodyOnlyNoSchema(`deep_learning', `madlib_keras')
+    return madlib_keras.internal_keras_eval_transition_ctq(**globals())
+$$ LANGUAGE plpythonu
+m4_ifdef(`__HAS_FUNCTION_PROPERTIES__', `NO SQL', `');
+
+CREATE OR REPLACE FUNCTION MADLIB_SCHEMA.internal_keras_eval_merge(
+    state1          REAL[],
+    state2          REAL[]
+) RETURNS REAL[] AS $$
+PythonFunctionBodyOnlyNoSchema(`deep_learning', `madlib_keras')
+    return madlib_keras.internal_keras_eval_merge_ctq(**globals())
+$$ LANGUAGE plpythonu
+m4_ifdef(`__HAS_FUNCTION_PROPERTIES__', `NO SQL', `');
+
+CREATE OR REPLACE FUNCTION MADLIB_SCHEMA.internal_keras_eval_final(
+    state REAL[]
+) RETURNS REAL[2] AS $$
+PythonFunctionBodyOnlyNoSchema(`deep_learning', `madlib_keras')
+    return madlib_keras.internal_keras_eval_final_ctq(**globals())
+$$ LANGUAGE plpythonu
+m4_ifdef(`__HAS_FUNCTION_PROPERTIES__', `NO SQL', `');
+
+DROP AGGREGATE IF EXISTS MADLIB_SCHEMA.internal_keras_evaluate(
+                                       BYTEA[],
+                                       BYTEA[],
+                                       INTEGER[],
+                                       INTEGER[],
+                                       BYTEA,
+                                       TEXT,
+                                       TEXT,
+                                       INTEGER,
+                                       INTEGER[],
+                                       INTEGER,
+                                       INTEGER[],
+                                       INTEGER[],
+                                       INTEGER[],
+                                       BOOLEAN,
+                                       BYTEA);
+
+CREATE AGGREGATE MADLIB_SCHEMA.internal_keras_evaluate(
+    /* dependent_var */             BYTEA[],
+    /* independent_var */           BYTEA[],
+    /* dependent_var_shape */       INTEGER[],
+    /* independent_var_shape */     INTEGER[],
+    /* model_weights */             BYTEA,
+    /* compile_params */            TEXT,
+    /* fit_params */            TEXT,
+    /* dist_key */                  INTEGER,
+    /* dist_key_mapping */          INTEGER[],
+    /* current_seg_id */            INTEGER,
+    /* segments_per_host */         INTEGER[],
+    /* images_per_seg*/             INTEGER[],
+    /* accessible_gpus_for_seg */   INTEGER[],
+    /* should_clear_session */      BOOLEAN,
+    /* custom_function_map */       BYTEA
+)(
+    STYPE=REAL[],
+    INITCOND='{0,0,0}',
+    SFUNC=MADLIB_SCHEMA.internal_keras_eval_transition,
+    m4_ifdef(`__POSTGRESQL__', `', `prefunc=MADLIB_SCHEMA.internal_keras_eval_merge,')
+    FINALFUNC=MADLIB_SCHEMA.internal_keras_eval_final
+);
+
+
+CREATE OR REPLACE FUNCTION MADLIB_SCHEMA.madlib_keras_fit(
+     message VARCHAR
+) RETURNS VARCHAR AS $$
+    PythonFunctionBodyOnly(`deep_learning', `madlib_keras')
+    with AOControl(False):
+        return madlib_keras.fit_help(**globals())
+$$ LANGUAGE plpythonu IMMUTABLE
+m4_ifdef(`__HAS_FUNCTION_PROPERTIES__', `CONTAINS SQL', `');
+
+CREATE OR REPLACE FUNCTION MADLIB_SCHEMA.madlib_keras_fit()
+RETURNS VARCHAR AS $$
+    SELECT MADLIB_SCHEMA.madlib_keras_fit('');
+$$ LANGUAGE sql IMMUTABLE
+m4_ifdef(`\_\_HAS_FUNCTION_PROPERTIES\_\_', `CONTAINS SQL', `');
+
+CREATE OR REPLACE FUNCTION MADLIB_SCHEMA.madlib_keras_evaluate(
+     message VARCHAR
+) RETURNS VARCHAR AS $$
+    PythonFunctionBodyOnly(`deep_learning', `madlib_keras')
+    with AOControl(False):
+        return madlib_keras.evaluate_help(**globals())
+$$ LANGUAGE plpythonu IMMUTABLE
+m4_ifdef(`__HAS_FUNCTION_PROPERTIES__', `CONTAINS SQL', `');
+
+CREATE OR REPLACE FUNCTION MADLIB_SCHEMA.madlib_keras_evaluate()
+RETURNS VARCHAR AS $$
+    SELECT MADLIB_SCHEMA.madlib_keras_evaluate('');
+$$ LANGUAGE sql IMMUTABLE
+m4_ifdef(`\_\_HAS_FUNCTION_PROPERTIES\_\_', `CONTAINS SQL', `');
+
+CREATE OR REPLACE FUNCTION MADLIB_SCHEMA.madlib_keras_predict(
+     message VARCHAR
+) RETURNS VARCHAR AS $$
+    PythonFunctionBodyOnly(`deep_learning', `madlib_keras_predict')
+    with AOControl(False):
+        return madlib_keras_predict.predict_help(**globals())
+$$ LANGUAGE plpythonu IMMUTABLE
+m4_ifdef(`__HAS_FUNCTION_PROPERTIES__', `CONTAINS SQL', `');
+
+CREATE OR REPLACE FUNCTION MADLIB_SCHEMA.madlib_keras_predict()
+RETURNS VARCHAR AS $$
+    SELECT MADLIB_SCHEMA.madlib_keras_predict('');
+$$ LANGUAGE sql IMMUTABLE
+m4_ifdef(`\_\_HAS_FUNCTION_PROPERTIES\_\_', `CONTAINS SQL', `');
+
+CREATE OR REPLACE FUNCTION MADLIB_SCHEMA.madlib_keras_predict_byom(
+     message VARCHAR
+) RETURNS VARCHAR AS $$
+    PythonFunctionBodyOnly(`deep_learning', `madlib_keras_predict')
+    with AOControl(False):
+        return madlib_keras_predict.predict_byom_help(**globals())
+$$ LANGUAGE plpythonu IMMUTABLE
+m4_ifdef(`__HAS_FUNCTION_PROPERTIES__', `CONTAINS SQL', `');
+
+CREATE OR REPLACE FUNCTION MADLIB_SCHEMA.madlib_keras_predict_byom()
+RETURNS VARCHAR AS $$
+    SELECT MADLIB_SCHEMA.madlib_keras_predict_byom('');
+$$ LANGUAGE sql IMMUTABLE
+m4_ifdef(`\_\_HAS_FUNCTION_PROPERTIES\_\_', `CONTAINS SQL', `');
+
+
+
+
+CREATE OR REPLACE FUNCTION MADLIB_SCHEMA.fit_transition_wide_batch_level(
+    state                       BYTEA,
+    samples_every               INTEGER,
+    dependent_var1              BYTEA,
+    dependent_var2              BYTEA,
+    dependent_var3              BYTEA,
+    dependent_var4              BYTEA,
+    dependent_var5              BYTEA,
+    independent_var1            BYTEA,
+    independent_var2            BYTEA,
+    independent_var3            BYTEA,
+    independent_var4            BYTEA,
+    independent_var5            BYTEA,
+    embedding_weights           BYTEA[],
+    embedding_bias              BYTEA[],
+    dependent_var_shape         INTEGER[],
+    independent_var_shape       INTEGER[],
+    model_architecture          TEXT,
+    compile_params              TEXT,
+    fit_params                  TEXT,
+    dist_key                    INTEGER,
+    dist_key_mapping            INTEGER[],
+    current_seg_id              INTEGER,
+    segments_per_host           INTEGER[],
+    images_per_seg              INTEGER[],
+    accessible_gpus_for_seg     INTEGER[],
+    prev_serialized_weights     BYTEA,
+    custom_function_map         BYTEA
+) RETURNS BYTEA AS $$
+PythonFunctionBodyOnlyNoSchema(`deep_learning', `madlib_keras')
+    import traceback
+    from sys import exc_info
+    import plpy
+    try:
+        return madlib_keras.fit_transition_wide_batch_level(**globals())
+    except Exception as e:
+        etype, _, tb = exc_info()
+        detail = ''.join(traceback.format_exception(etype, e, tb))
+        message = e.message + 'TransAggDetail' + detail
+        e.args = (message,)
+        raise e
+$$ LANGUAGE plpythonu
+m4_ifdef(`__HAS_FUNCTION_PROPERTIES__', `CONTAINS SQL', `');
+
+CREATE OR REPLACE FUNCTION MADLIB_SCHEMA.fit_transition_batch_level(
+    state                       BYTEA,
+    samples_every               INTEGER,
+    dependent_var               BYTEA[],
+    independent_var             BYTEA[],
+    embedding_weights           BYTEA[],
+    embedding_bias              BYTEA[],
+    dependent_var_shape         INTEGER[],
+    independent_var_shape       INTEGER[],
+    model_architecture          TEXT,
+    compile_params              TEXT,
+    fit_params                  TEXT,
+    dist_key                    INTEGER,
+    dist_key_mapping            INTEGER[],
+    current_seg_id              INTEGER,
+    segments_per_host           INTEGER[],
+    images_per_seg              INTEGER[],
+    accessible_gpus_for_seg     INTEGER[],
+    prev_serialized_weights     BYTEA,
+    custom_function_map         BYTEA
+) RETURNS BYTEA AS $$
+PythonFunctionBodyOnlyNoSchema(`deep_learning', `madlib_keras')
+    import traceback
+    from sys import exc_info
+    import plpy
+    try:
+        return madlib_keras.fit_transition_batch_level(**globals())
+    except Exception as e:
+        etype, _, tb = exc_info()
+        detail = ''.join(traceback.format_exception(etype, e, tb))
+        message = e.message + 'TransAggDetail' + detail
+        e.args = (message,)
+        raise e
+$$ LANGUAGE plpythonu
+m4_ifdef(`__HAS_FUNCTION_PROPERTIES__', `CONTAINS SQL', `');
+
+
+CREATE OR REPLACE FUNCTION MADLIB_SCHEMA.madlib_keras_fit_batch_level(
+    source_table            VARCHAR,
+    model                   VARCHAR,
+    model_arch_table        VARCHAR,
+    model_id                INTEGER,
+    compile_params          VARCHAR,
+    fit_params              VARCHAR,
+    samples_every           INTEGER,
+    num_iterations          INTEGER,
+    use_gpus                BOOLEAN DEFAULT FALSE,
+    validation_table        VARCHAR DEFAULT NULL,
+    metrics_compute_frequency  INTEGER DEFAULT NULL,
+    warm_start              BOOLEAN DEFAULT NULL,
+    name                    VARCHAR DEFAULT NULL,
+    description             VARCHAR DEFAULT NULL,
+    object_table            VARCHAR DEFAULT NULL
+) RETURNS VOID AS $$
+    PythonFunctionBodyOnly(`deep_learning', `madlib_keras')
+    from utilities.control import SetGUC
+    with AOControl(False):
+        with SetGUC("plan_cache_mode", "force_generic_plan"):
+            madlib_keras.fit_batch_level(**globals())
+$$ LANGUAGE plpythonu VOLATILE
+m4_ifdef(`__HAS_FUNCTION_PROPERTIES__', `MODIFIES SQL DATA', `');
+
+
+
+DROP AGGREGATE IF EXISTS MADLIB_SCHEMA.fit_step_batch_level(
+    /* samples_every */          INTEGER,
+    /* dep_var */                BYTEA,
+    /* dep_var */                BYTEA,
+    /* dep_var */                BYTEA,
+    /* dep_var */                BYTEA,
+    /* dep_var */                BYTEA,
+    /* ind_var */                BYTEA,
+    /* ind_var */                BYTEA,
+    /* ind_var */                BYTEA,
+    /* ind_var */                BYTEA,
+    /* ind_var */                BYTEA,
+    /* embedding_weights */      BYTEA[],
+    /* embedding_bias */         BYTEA[],
+    /* dep_var_shape */          INTEGER[],
+    /* ind_var_shape */          INTEGER[],
+    /* model_architecture */     TEXT,
+    /* compile_params */         TEXT,
+    /* fit_params */             TEXT,
+    /* dist_key */               INTEGER,
+    /* dist_key_mapping */       INTEGER[],
+    /* current_seg_id */         INTEGER,
+    /* segments_per_host */      INTEGER[],
+    /* images_per_seg */         INTEGER[],
+    /* segments_per_host  */     INTEGER[],
+    /* prev_serialized_weights */BYTEA,
+    /* custom_loss_cfunction */  BYTEA);
+CREATE AGGREGATE MADLIB_SCHEMA.fit_step_batch_level(
+    /* samples_every */          INTEGER,
+    /* dep_var */                BYTEA,
+    /* dep_var */                BYTEA,
+    /* dep_var */                BYTEA,
+    /* dep_var */                BYTEA,
+    /* dep_var */                BYTEA,
+    /* ind_var */                BYTEA,
+    /* ind_var */                BYTEA,
+    /* ind_var */                BYTEA,
+    /* ind_var */                BYTEA,
+    /* ind_var */                BYTEA,
+    /* embedding_weights */      BYTEA[],
+    /* embedding_bias */         BYTEA[],
+    /* dep_var_shape */          INTEGER[],
+    /* ind_var_shape */          INTEGER[],
+    /* model_architecture */     TEXT,
+    /* compile_params */         TEXT,
+    /* fit_params */             TEXT,
+    /* dist_key */               INTEGER,
+    /* dist_key_mapping */       INTEGER[],
+    /* current_seg_id */         INTEGER,
+    /* segments_per_host */      INTEGER[],
+    /* images_per_seg */         INTEGER[],
+    /* segments_per_host  */     INTEGER[],
+    /* prev_serialized_weights */BYTEA,
+    /* custom_loss_cfunction */  BYTEA
+    )(
+    STYPE=BYTEA,
+    SFUNC=MADLIB_SCHEMA.fit_transition_wide_batch_level,
+    m4_ifdef(`__POSTGRESQL__', `', `prefunc=MADLIB_SCHEMA.fit_merge,')
+    FINALFUNC=MADLIB_SCHEMA.fit_final
+);
+
+DROP AGGREGATE IF EXISTS MADLIB_SCHEMA.fit_step_batch_level(
+    INTEGER,
+    BYTEA[],
+    BYTEA[],
+    BYTEA[],
+    BYTEA[],
+    INTEGER[],
+    INTEGER[],
+    TEXT,
+    TEXT,
+    TEXT,
+    INTEGER,
+    INTEGER[],
+    INTEGER,
+    INTEGER[],
+    INTEGER[],
+    INTEGER[],
+    BYTEA,
+    BYTEA);
+CREATE AGGREGATE MADLIB_SCHEMA.fit_step_batch_level(
+    /* samples_every */          INTEGER,
+    /* dep_var */                BYTEA[],
+    /* ind_var */                BYTEA[],
+    /* embedding_weights */      BYTEA[],
+    /* embedding_bias */         BYTEA[],
+    /* dep_var_shape */          INTEGER[],
+    /* ind_var_shape */          INTEGER[],
+    /* model_architecture */     TEXT,
+    /* compile_params */         TEXT,
+    /* fit_params */             TEXT,
+    /* dist_key */               INTEGER,
+    /* dist_key_mapping */       INTEGER[],
+    /* current_seg_id */         INTEGER,
+    /* segments_per_host */      INTEGER[],
+    /* images_per_seg */         INTEGER[],
+    /* accessible_gpus_for_seg */INTEGER[],
+    /* prev_serialized_weights */BYTEA,
+    /* custom_loss_cfunction */  BYTEA
+)(
+    STYPE=BYTEA,
+    SFUNC=MADLIB_SCHEMA.fit_transition_batch_level,
+    m4_ifdef(`__POSTGRESQL__', `', `prefunc=MADLIB_SCHEMA.fit_merge,')
+    FINALFUNC=MADLIB_SCHEMA.fit_final
+);
+
+CREATE OR REPLACE FUNCTION MADLIB_SCHEMA.fit_grads_merge(
+    state1          BYTEA,
+    state2          BYTEA
+) RETURNS BYTEA AS $$
+PythonFunctionBodyOnlyNoSchema(`deep_learning', `madlib_keras')
+    import traceback
+    from sys import exc_info
+    import plpy
+
+    try:
+        return madlib_keras.fit_grads_merge(**globals())
+    except Exception as e:
+        etype, _, tb = exc_info()
+        detail = ''.join(traceback.format_exception(etype, e, tb))
+        message = e.message + 'MergeAggDetail' + detail
+        e.args = (message,)
+        raise e
+$$ LANGUAGE plpythonu
+m4_ifdef(`__HAS_FUNCTION_PROPERTIES__', `NO SQL', `');
+
+CREATE OR REPLACE FUNCTION MADLIB_SCHEMA.fit_grads_final(
+    state BYTEA
+) RETURNS BYTEA AS $$
+PythonFunctionBodyOnlyNoSchema(`deep_learning', `madlib_keras')
+    import traceback
+    from sys import exc_info
+    import plpy
+    try:
+        return madlib_keras.fit_grads_final(**globals())
+    except Exception as e:
+        etype, _, tb = exc_info()
+        detail = ''.join(traceback.format_exception(etype, e, tb))
+        message = e.message + 'FinalAggDetail' + detail
+        e.args = (message,)
+        raise e
+
+$$ LANGUAGE plpythonu
+m4_ifdef(`__HAS_FUNCTION_PROPERTIES__', `NO SQL', `');
+
+
+CREATE OR REPLACE FUNCTION MADLIB_SCHEMA.fit_transition_gradients_wide_batch_level(
+    state                       BYTEA,
+    samples_every               INTEGER,
+    dependent_var1              BYTEA,
+    dependent_var2              BYTEA,
+    dependent_var3              BYTEA,
+    dependent_var4              BYTEA,
+    dependent_var5              BYTEA,
+    independent_var1            BYTEA,
+    independent_var2            BYTEA,
+    independent_var3            BYTEA,
+    independent_var4            BYTEA,
+    independent_var5            BYTEA,
+    embedding_weights           BYTEA[],
+    embedding_bias              BYTEA[],
+    dependent_var_shape         INTEGER[],
+    independent_var_shape       INTEGER[],
+    compile_params              TEXT,
+    fit_params                  TEXT,
+    dist_key                    INTEGER,
+    dist_key_mapping            INTEGER[],
+    current_seg_id              INTEGER,
+    segments_per_host           INTEGER[],
+    images_per_seg              INTEGER[],
+    accessible_gpus_for_seg     INTEGER[],
+    prev_serialized_weights     BYTEA,
+    custom_function_map         BYTEA
+) RETURNS BYTEA AS $$
+PythonFunctionBodyOnlyNoSchema(`deep_learning', `madlib_keras')
+    import traceback
+    from sys import exc_info
+    import plpy
+    try:
+        return madlib_keras.fit_transition_gradients_wide_batch_level(**globals())
+    except Exception as e:
+        etype, _, tb = exc_info()
+        detail = ''.join(traceback.format_exception(etype, e, tb))
+        message = e.message + 'TransAggDetail' + detail
+        e.args = (message,)
+        raise e
+$$ LANGUAGE plpythonu
+m4_ifdef(`__HAS_FUNCTION_PROPERTIES__', `CONTAINS SQL', `');
+
+CREATE OR REPLACE FUNCTION MADLIB_SCHEMA.fit_transition_gradients_batch_level(
+    state                       BYTEA,
+    samples_every               INTEGER,
+    dependent_var               BYTEA[],
+    independent_var             BYTEA[],
+    embedding_weights           BYTEA[],
+    embedding_bias              BYTEA[],
+    dependent_var_shape         INTEGER[],
+    independent_var_shape       INTEGER[],
+    compile_params              TEXT,
+    fit_params                  TEXT,
+    dist_key                    INTEGER,
+    dist_key_mapping            INTEGER[],
+    current_seg_id              INTEGER,
+    segments_per_host           INTEGER[],
+    images_per_seg              INTEGER[],
+    accessible_gpus_for_seg     INTEGER[],
+    prev_serialized_weights     BYTEA,
+    custom_function_map         BYTEA
+) RETURNS BYTEA AS $$
+PythonFunctionBodyOnlyNoSchema(`deep_learning', `madlib_keras')
+    import traceback
+    from sys import exc_info
+    import plpy
+    try:
+        return madlib_keras.fit_transition_gradients_batch_level(**globals())
+    except Exception as e:
+        etype, _, tb = exc_info()
+        detail = ''.join(traceback.format_exception(etype, e, tb))
+        message = e.message + 'TransAggDetail' + detail
+        e.args = (message,)
+        raise e
+$$ LANGUAGE plpythonu
+m4_ifdef(`__HAS_FUNCTION_PROPERTIES__', `CONTAINS SQL', `');
+
+
+CREATE OR REPLACE FUNCTION MADLIB_SCHEMA.madlib_keras_fit_grads_batch_level(
+    source_table            VARCHAR,
+    model                   VARCHAR,
+    model_arch_table        VARCHAR,
+    model_id                INTEGER,
+    compile_params          VARCHAR,
+    fit_params              VARCHAR,
+    samples_every           INTEGER,
+    num_iterations          INTEGER,
+    use_gpus                BOOLEAN DEFAULT FALSE,
+    validation_table        VARCHAR DEFAULT NULL,
+    metrics_compute_frequency  INTEGER DEFAULT NULL,
+    warm_start              BOOLEAN DEFAULT NULL,
+    name                    VARCHAR DEFAULT NULL,
+    description             VARCHAR DEFAULT NULL,
+    object_table            VARCHAR DEFAULT NULL
+) RETURNS VOID AS $$
+    PythonFunctionBodyOnly(`deep_learning', `madlib_keras')
+    from utilities.control import SetGUC
+    with AOControl(False):
+        with SetGUC("plan_cache_mode", "force_generic_plan"):
+            madlib_keras.fit_gradients_batch_level(**globals())
+$$ LANGUAGE plpythonu VOLATILE
+m4_ifdef(`__HAS_FUNCTION_PROPERTIES__', `MODIFIES SQL DATA', `');
+
+
+
+DROP AGGREGATE IF EXISTS MADLIB_SCHEMA.fit_step_gradients_batch_level(
+    /* samples_every */          INTEGER,
+    /* dep_var */                BYTEA,
+    /* dep_var */                BYTEA,
+    /* dep_var */                BYTEA,
+    /* dep_var */                BYTEA,
+    /* dep_var */                BYTEA,
+    /* ind_var */                BYTEA,
+    /* ind_var */                BYTEA,
+    /* ind_var */                BYTEA,
+    /* ind_var */                BYTEA,
+    /* ind_var */                BYTEA,
+    /* embedding_weights */      BYTEA[],
+    /* embedding_bias */         BYTEA[],
+    /* dep_var_shape */          INTEGER[],
+    /* ind_var_shape */          INTEGER[],
+    /* compile_params */         TEXT,
+    /* fit_params */             TEXT,
+    /* dist_key */               INTEGER,
+    /* dist_key_mapping */       INTEGER[],
+    /* current_seg_id */         INTEGER,
+    /* segments_per_host */      INTEGER[],
+    /* images_per_seg */         INTEGER[],
+    /* segments_per_host  */     INTEGER[],
+    /* prev_serialized_weights */BYTEA,
+    /* custom_loss_cfunction */  BYTEA);
+CREATE AGGREGATE MADLIB_SCHEMA.fit_step_gradients_batch_level(
+    /* samples_every */          INTEGER,
+    /* dep_var */                BYTEA,
+    /* dep_var */                BYTEA,
+    /* dep_var */                BYTEA,
+    /* dep_var */                BYTEA,
+    /* dep_var */                BYTEA,
+    /* ind_var */                BYTEA,
+    /* ind_var */                BYTEA,
+    /* ind_var */                BYTEA,
+    /* ind_var */                BYTEA,
+    /* ind_var */                BYTEA,
+    /* embedding_weights */      BYTEA[],
+    /* embedding_bias */         BYTEA[],
+    /* dep_var_shape */          INTEGER[],
+    /* ind_var_shape */          INTEGER[],
+    /* compile_params */         TEXT,
+    /* fit_params */             TEXT,
+    /* dist_key */               INTEGER,
+    /* dist_key_mapping */       INTEGER[],
+    /* current_seg_id */         INTEGER,
+    /* segments_per_host */      INTEGER[],
+    /* images_per_seg */         INTEGER[],
+    /* segments_per_host  */     INTEGER[],
+    /* prev_serialized_weights */BYTEA,
+    /* custom_loss_cfunction */  BYTEA
+    )(
+    STYPE=BYTEA,
+    SFUNC=MADLIB_SCHEMA.fit_transition_gradients_wide_batch_level,
+    m4_ifdef(`__POSTGRESQL__', `', `prefunc=MADLIB_SCHEMA.fit_grads_merge,')
+    FINALFUNC=MADLIB_SCHEMA.fit_grads_final
+);
+
+DROP AGGREGATE IF EXISTS MADLIB_SCHEMA.fit_step_gradients_batch_level(
+    INTEGER,
+    BYTEA[],
+    BYTEA[],
+    BYTEA[],
+    BYTEA[],
+    INTEGER[],
+    INTEGER[],
+    TEXT,
+    TEXT,
+    INTEGER,
+    INTEGER[],
+    INTEGER,
+    INTEGER[],
+    INTEGER[],
+    INTEGER[],
+    BYTEA,
+    BYTEA);
+CREATE AGGREGATE MADLIB_SCHEMA.fit_step_gradients_batch_level(
+    /* samples_every */          INTEGER,
+    /* dep_var */                BYTEA[],
+    /* ind_var */                BYTEA[],
+    /* embedding_weights */      BYTEA[],
+    /* embedding_bias */         BYTEA[],
+    /* dep_var_shape */          INTEGER[],
+    /* ind_var_shape */          INTEGER[],
+    /* compile_params */         TEXT,
+    /* fit_params */             TEXT,
+    /* dist_key */               INTEGER,
+    /* dist_key_mapping */       INTEGER[],
+    /* current_seg_id */         INTEGER,
+    /* segments_per_host */      INTEGER[],
+    /* images_per_seg */         INTEGER[],
+    /* accessible_gpus_for_seg */INTEGER[],
+    /* prev_serialized_weights */BYTEA,
+    /* custom_loss_cfunction */  BYTEA
+)(
+    STYPE=BYTEA,
+    SFUNC=MADLIB_SCHEMA.fit_transition_gradients_batch_level,
+    m4_ifdef(`__POSTGRESQL__', `', `prefunc=MADLIB_SCHEMA.fit_grads_merge,')
+    FINALFUNC=MADLIB_SCHEMA.fit_grads_final
+);
+
+
+create or replace function updates_embeddings(
+    embed BYTEA[],
+    embed_bias BYTEA[],
+    embed_id INTEGER[]
+)
+returns void as $$
+begin
+  for index in 0..array_length(embed_id,1) loop
+     UPDATE embed_model SET (embedding_weight,embedding_bias) = (embed[index],embed_bias[index]) where id = embed_id[index];
+  end loop;
+end;
+$$ language plpgsql;
+
+create or replace function insert_embeddings(
+    embed       BYTEA[],
+    embed_bias  BYTEA[],
+    max_feature INTEGER,
+    m_id        INTEGER
+)
+returns void as $$
+begin
+  for index in 1..max_feature loop
+     INSERT INTO embed_model(model_id, embedding_weight, embedding_bias, id) VALUES (m_id, embed[index], embed_bias[index], index);
+  end loop;
+end;
+$$ language plpgsql;
+
+CREATE OR REPLACE FUNCTION MADLIB_SCHEMA.updates_embeddings(
+    weights     NUMERIC[],
+    embed_id    INTEGER
+) RETURNS VOID AS $$
+PythonFunctionBodyOnlyNoSchema(`deep_learning', `madlib_keras')
+    import plpy
+    flattened_weights = ""
+    for t in range(len(embed_id)):
+        weights_temp = np.float32(weights[0][t]).tostring()
+        flattened_weights = flattened_weights + str(p2.Binary(weights_temp))
+        if t != len(embed_id)-1:
+            flattened_weights = flattened_weights + ","
+    #flattened_weights = flattened_weights.replace("\\\\","\\")
+    flattened_weights_bias = ""
+    for t in range(len(embed_id)):
+        weights_temp = np.float32(weights[1][t]).tostring()
+        flattened_weights_bias = flattened_weights_bias + str(p2.Binary(weights_temp))
+        if t != len(embed_id)-1:
+            flattened_weights_bias = flattened_weights_bias + ","
+        #flattened_weights_bias = flattened_weights_bias.replace("\\\\","\\")
+    sql = '''Select update_embedding(ARRAY[{0}],ARRAY[{1}],ARRAY{2})'''.format(flattened_weights,flattened_weights_bias,embed_id)
+    plpy.execute(sql)
+$$ LANGUAGE plpythonu
+m4_ifdef(`__HAS_FUNCTION_PROPERTIES__', `CONTAINS SQL', `');
+
+
+
+CREATE OR REPLACE FUNCTION MADLIB_SCHEMA.create_master(
+    gpseg_list              INTEGER[]
+) RETURNS VOID AS $$
+PythonFunctionBodyOnlyNoSchema(`deep_learning', `madlib_keras')
+    import traceback
+    from sys import exc_info
+    import plpy
+    try:
+        return madlib_keras.create_master(**globals())
+    except Exception as e:
+        etype, _, tb = exc_info()
+        detail = ''.join(traceback.format_exception(etype, e, tb))
+        message = e.message + 'TransAggDetail' + detail
+        e.args = (message,)
+        raise e
+$$ LANGUAGE plpythonu
+m4_ifdef(`__HAS_FUNCTION_PROPERTIES__', `CONTAINS SQL', `');
+
+CREATE OR REPLACE FUNCTION MADLIB_SCHEMA.batch_compute_gradient(
+    current_seg_id              INTEGER,
+    batch_num                   INTEGER,
+    average_iter                INTEGER,
+    source_table_name           TEXT
+) RETURNS VOID AS $$
+PythonFunctionBodyOnlyNoSchema(`deep_learning', `madlib_keras')
+    return madlib_keras.batch_compute_gradient(**globals())
+$$ LANGUAGE plpythonu
+m4_ifdef(`__HAS_FUNCTION_PROPERTIES__', `CONTAINS SQL', `');
+
+CREATE OR REPLACE FUNCTION MADLIB_SCHEMA.batch_compute_gradient_hot_key(
+    current_seg_id              INTEGER,
+    batch_num                   INTEGER,
+    average_iter                INTEGER,
+    source_table_name           TEXT
+) RETURNS VOID AS $$
+PythonFunctionBodyOnlyNoSchema(`deep_learning', `madlib_keras')
+    return madlib_keras.batch_compute_gradient_hot_key(**globals())
+$$ LANGUAGE plpythonu
+m4_ifdef(`__HAS_FUNCTION_PROPERTIES__', `CONTAINS SQL', `');
+
+CREATE OR REPLACE FUNCTION MADLIB_SCHEMA.dense_subnet_compute(
+    current_seg_id              INTEGER,
+    batch_num                   INTEGER,
+    source_table_name           TEXT
+) RETURNS VOID AS $$
+PythonFunctionBodyOnlyNoSchema(`deep_learning', `madlib_keras')
+    return madlib_keras.dense_subnet_compute(**globals())
+$$ LANGUAGE plpythonu
+m4_ifdef(`__HAS_FUNCTION_PROPERTIES__', `CONTAINS SQL', `');
+
+
+CREATE OR REPLACE FUNCTION MADLIB_SCHEMA.dense_model_average(
+    gpseg_list                  INTEGER[],
+    average_iter                INTEGER
+) RETURNS VOID AS $$
+PythonFunctionBodyOnlyNoSchema(`deep_learning', `madlib_keras')
+    return madlib_keras.dense_model_average(**globals())
+$$ LANGUAGE plpythonu
+m4_ifdef(`__HAS_FUNCTION_PROPERTIES__', `CONTAINS SQL', `');
+
+
+CREATE OR REPLACE FUNCTION MADLIB_SCHEMA.get_unique_id(
+    xi               BYTEA,
+    shape         INTEGER[]
+) RETURNS INTEGER[] AS $$
+PythonFunctionBodyOnlyNoSchema(`deep_learning', `madlib_keras')
+    return madlib_keras.get_unique_id(**globals())
+$$ LANGUAGE plpythonu
+m4_ifdef(`__HAS_FUNCTION_PROPERTIES__', `NO SQL', `');
+
+
+CREATE OR REPLACE FUNCTION MADLIB_SCHEMA.memory_check(
+    ip              BYTEA,
+    seg_port        INTEGER,
+    sql_mem         INTEGER
+) RETURNS INTEGER[] AS $$
+PythonFunctionBodyOnlyNoSchema(`deep_learning', `madlib_keras')
+    return madlib_keras.model_test(**globals())
+$$ LANGUAGE plpythonu
+m4_ifdef(`__HAS_FUNCTION_PROPERTIES__', `NO SQL', `');
+
+
+CREATE OR REPLACE FUNCTION MADLIB_SCHEMA.get_available_memory()
+RETURNS INTEGER AS $$
+import subprocess
+
+command = "free -m"
+result = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+output, error = result.communicate()
+
+if result.returncode == 0:
+    output_lines = output.decode().splitlines()
+    memory_line = output_lines[1].split()
+    available_memory = int(memory_line[6])
+    return available_memory
+else:
+    raise Exception("Command execution failed: " + error.decode())
+$$ LANGUAGE plpythonu;
+
+
+CREATE OR REPLACE FUNCTION MADLIB_SCHEMA.control_start(
+    seg_list            INTEGER[],
+    seg_port            INTEGER[],
+    sql_mem_use         INTEGER,
+    batch_index         INTEGER,
+    is_average          INTEGER,
+    source_table_name   TEXT,
+    asy_or_sy           INTEGER,
+    epoch               INTEGER
+)RETURNS VOID AS $$
+PythonFunctionBodyOnlyNoSchema(`deep_learning', `madlib_keras')
+    return madlib_keras.control_start(**globals())
+$$ LANGUAGE plpythonu
+m4_ifdef(`__HAS_FUNCTION_PROPERTIES__', `NO SQL', `');
