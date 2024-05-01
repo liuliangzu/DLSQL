@@ -23,11 +23,6 @@ train_data = list()
 images_labels_list = []
 error_list = []
 for i in range(len(classes)):
-    if i < 982:
-        continue
-    if len(train_data) > 50000:
-        print(i)
-        break
     path = 'train/'+classes[i]+'/'
     images_files = os.listdir(path)
     label = str(labels_dict[classes[i]])
