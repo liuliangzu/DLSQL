@@ -102,3 +102,18 @@ max_connections = 2500
   cudnn = 7.6.5
   tensorflow-gpu = 1.15.0
 ```
+# Running example
+Regarding the use of Distvec, you need to replace the files in the corresponding path of madlib with the files in the corresponding src. After installation is completed, run the following script.
+```
+
+select madlib.control_start(Array[0,1,2,3],Array[33000,33001,33002,33003],1,800,100,'criteo_tensor_packed',1,10);
+Parameter Description:
+   indicates the communication IP of each node
+   port number
+   memory detection
+   data size of the node
+   the delay of synchronizing
+   the name of the dataset used
+   sparse training or dense training
+   the length of the training epoch
+```
